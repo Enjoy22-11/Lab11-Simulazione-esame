@@ -1,0 +1,11 @@
+Richieste:
+PUNTO 1
+a. L'utente seleziona dal corrispondente menù a tendina un tipo di formato multimediale (MediaType, dalla tabella MediaType).
+
+b. Premendo il pulsante "Crea Grafo", l'applicazione costruisce un grafo NON orientato e pesato che rappresenta le associazioni di acquisto tra i brani musicali.
+
+I vertici: Sono le tracce (Track) che appartengono al formato multimediale selezionato dall'utente. N.B. Si consideri come campo del nodo Traccia anche la sua dimensione in Megabyte (calcolata a partire dal campo Bytes. Hint: 1 MB = 1.048.576 Bytes. Controllare che il campo Bytes sia valido, ovvero strettamente maggiore di 0, prima di inserire la traccia nel grafo).
+
+Gli archi: Esiste un arco tra due tracce se sono state acquistate insieme in almeno una stessa Fattura (tabella Invoice, collegata tramite InvoiceLine).
+
+Il peso: Il peso dell'arco è pari alla somma dei totali (Total della tabella Invoice) di tutte le fatture in cui le due tracce compaiono insieme.
