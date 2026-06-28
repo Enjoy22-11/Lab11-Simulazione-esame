@@ -1,0 +1,21 @@
+Richieste:
+PUNTO 1 (21 Punti)
+1. L'utente seleziona da due menù a tendina due anni che definiscono un range temporale (es. Da: 2009, A: 2011). Da un terzo menù a tendina, seleziona il nome di un dipendente (Employee, visualizzando "Nome Cognome"). I menù degli anni devono essere popolati interrogando il database per ottenere gli anni in cui è stata emessa almeno una fattura.
+
+2. Premendo sul tasto Crea grafo, l'applicazione dovrà costruire un grafo semplice, NON orientato e pesato, così costituito:
+
+I Nodi: Sono tutti i clienti (Customer) seguiti dal dipendente selezionato (campo SupportRepId) che hanno effettuato almeno un acquisto (tabella Invoice) nel range di anni indicato (estremi inclusi).
+
+Trappola di Validazione: Si inseriscano nel grafo solo i clienti la cui Email è valida (deve contenere il carattere @). Inoltre, si salvi nel nodo anche il nome dell'azienda (Company); se il cliente non ha un'azienda (campo NULL), il programma deve salvare automaticamente la stringa "Privato".
+
+Gli Archi: Due clienti (nodi) sono connessi da un arco se e solo se hanno acquistato brani appartenenti allo stesso Album (AlbumId) nel corso del periodo selezionato.
+
+Il Peso: Il peso dell'arco è pari alla somma totale dell'importo speso per quell'album in comune. Il calcolo si ottiene sommando (UnitPrice * Quantity) dalla tabella InvoiceLine per i brani di quell'album, unendo la spesa del Cliente A e la spesa del Cliente B nel lasso di tempo selezionato.
+
+3. Costruito il grafo, l'applicazione visualizza il numero di nodi e di archi presenti. Alla pressione di un tasto Stampa Dettagli, il programma dovrà:
+
+Stampare i 3 archi di peso maggiore (mostrando i nomi e cognomi dei due clienti e il peso).
+
+Stampare il numero di componenti connesse.
+
+Stampare Nome, Cognome e Azienda (Company / "Privato") dei clienti che compongono la componente connessa più piccola (con meno nodi).
