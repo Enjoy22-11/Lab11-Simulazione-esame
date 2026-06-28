@@ -1,0 +1,22 @@
+Richieste:
+PUNTO	1
+a. L’utente seleziona dal corrispondente
+menù a tendina un genere musicale
+(tabella Genre).
+b. Premendo il pulsante “Crea grafo”,
+l’applicazione
+costruisce
+un grafo
+orientato e pesato che rappresenta le
+relazioni di preferenza tra artisti. I vertici
+sono gli artisti (Artist) che possiedono
+almeno un brano (Track) appartenente
+al genere selezionato. Esiste un arco tra l’artista A e l’artista B se almeno un cliente ha acquistato brani di
+entrambi gli artisti, con verso da A verso B se la popolarità di A è maggiore della popolarità di B. In caso i
+nodi A e B abbiano la stessa popolarità, aggiungere due archi in entrambi i versi. Si calcoli la popolarità di un
+artista come la somma di tutti i brani acquistati di quell’artista. Usare le tabelle invoceline e invoce per
+determinare gli acquisti dei clienti. Il peso dell’arco tra l’artista A e l’artista B è la somma delle rispettive
+popolarità.
+c. Costruito il grafo, l’applicazione visualizza il numero di vertici e archi e l’artista con maggiore influenza.
+L’influenza di un artista è calcolata come: peso archi uscenti − peso archi entranti. Inoltre, si visualizzino i 5
+archi con peso maggiore, in ordine decrescente.
