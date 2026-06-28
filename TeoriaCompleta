@@ -1,0 +1,325 @@
+
+Requirements.txt
+flet~=0.22.0
+networkx~=3.2.1
+mysql-connector-python~=8.3.0
+
+Connector.cnf
+[client]
+user=root
+password=
+host=127.0.0.1
+database=chinook
+raise_on_warnings=True
+
+
+
+
+
+
+
+
+
+
+Il Metodo del Professore (Quello che ti spaventa):
+Lui nel DAO crea il dizionario e lo popola:
+
+Python
+        # Nel DAO...
+        for row in cursor:
+            idArtist = row["ArtistId"]
+            popolarita = row["popolarita"]
+            result[idArtist] = popolarita  # Crea la mappa qui
+        return result
+Il Tuo Metodo (Lista di Tuple + Mappa nel Model):
+
+
+Tu nel DAO restituisci una normalissima e tranquillissima lista di tuple (esattamente come fai per gli archi!):
+Python
+        # Nel Tuo DAO...
+        for row in cursor:
+            # Butto tutto in una lista pacifica e me ne vado
+            result.append((row["ArtistId"], row["popolarita"]))
+        return result
+
+E poi nel Model.py, quando ti serve usarla, fai la tua amata magia con la mappa:
+
+Python
+        # Nel Tuo Model...
+        lista_popolarita = DAO.getPopolarita()
+        mappa_popolarita = {}
+
+        for id_artista, pop in lista_popolarita:
+             mappa_popolarita[id_artista] = pop
+
+        # E ora la usi esattamente come volevi tu!
+Ancora meglio se usi le tue Dataclass! Se una query restituisce dati complessi di un Cliente o di un Artista, tu estrai le righe dal DAO con result.append(Artista(row)), e poi in Python verifichi i dati con i metodi get, controlli se appartengono al periodo giusto, e decidi se metterli nella tua idMap e nel grafo.
+
+
+
+
+
+
+
+
+
+Assolutamente sì! Le tuple possono contenere infiniti elementi. Se la tua query SQL restituisce 4 o 5 colonne, tu nel DAO farai result.append((row["col1"], row["col2"], row["col3"])) e nel Model scriverai esattamente come hai intuito:
+
+Python
+for el1, el2, el3 in lista_di_tuple:
+    # fai le tue verifiche
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gli Archi e il Verso (Orientato)
+Ti chiede un grafo orientato (nx.DiGraph()).
+L'arco esiste se c'è "almeno un cliente in comune". Come si fa? Esattamente con la Self-Join che abbiamo visto oggi pomeriggio!
+
+Fai la query per trovare le coppie di artisti comprati dallo stesso cliente.
+
+Nel ciclo for in Python estrai la coppia (artista_A, artista_B).
+
+La trappola subdola del verso: Invece di fare add_edge(A, B) direttamente, usi gli if e interroghi la tua mappa della popolarità:
+
+Python
+pop_A = mappa_popolarita[A.id]
+pop_B = mappa_popolarita[B.id]
+peso_arco = pop_A + pop_B
+
+if pop_A > pop_B:
+    grafo.add_edge(A, B, weight=peso_arco)
+elif pop_B > pop_A:
+    grafo.add_edge(B, A, weight=peso_arco)
+else: # Sono uguali
+    grafo.add_edge(A, B, weight=peso_arco)
+    grafo.add_edge(B, A, weight=peso_arco)
+
+
+
+
+
+
+
+
+#ricorda <
+t1.ArtistId < t2.ArtistId        -- Niente cloni
+
+
+
+
+
+
+#Ragionamento usato nelle popolarità
+Step 1: I Nodi e la Popolarità (in SQL)
+Fai una query normalissima per prendere gli artisti e, già che ci sei, conti i loro brani venduti (la popolarità).
+Nel Model, crei i nodi e salvi la popolarità in una tua mappa:
+
+Python
+# Mappa magica che ti salva la vita
+self.mappa_popolarita[artista.id] = artista.popolarita
+
+
+
+Step 2: La Query degli Archi "Vuota" (in SQL)
+Invece di spaccarti la testa per calcolare il peso e i versi in DBeaver, tu fai una query banalissima per trovare solo CHI è collegato a CHI.
+"Hanno un cliente in comune?" Perfetto. Niente SUM, niente pesi complessi. Solo:
+
+SQL
+SELECT DISTINCT t1.ArtistId as id1, t2.ArtistId as id2
+FROM invoiceline il1, invoiceline il2, track t1, track t2
+WHERE il1.InvoiceId = il2.InvoiceId  -- Stessa fattura (stesso cliente)
+AND il1.TrackId = t1.TrackId
+AND il2.TrackId = t2.TrackId
+AND t1.ArtistId < t2.ArtistId        -- Niente cloni
+Fine. Il DAO ti restituisce solo una lista di tuple (id1, id2).
+
+Step 3: La Magia in Python (Il tuo capolavoro)
+Ora sei nel tuo Model.py, hai la tua lista di collegamenti grezzi e hai la mappa delle popolarità. Fai tutto qui, al calduccio e senza errori di sintassi SQL:
+
+Python
+        archi_grezzi = DAO.getArchiGrezzi()
+
+        for id1, id2 in archi_grezzi:
+            # Controllo che entrambi siano nel mio grafo (il tuo filtro di sicurezza!)
+            if id1 in self.mappa_popolarita and id2 in self.mappa_popolarita:
+
+                # 1. Recupero le popolarità
+                pop1 = self.mappa_popolarita[id1]
+                pop2 = self.mappa_popolarita[id2]
+
+                # 2. Calcolo il peso (il testo dice: somma delle popolarità)
+                peso_totale = pop1 + pop2
+
+                # 3. Decido il verso della freccia (il testo dice: dal più al meno popolare)
+                if pop1 > pop2:
+                    self.grafo.add_edge(id1, id2, weight=peso_totale)
+                elif pop2 > pop1:
+                    self.grafo.add_edge(id2, id1, weight=peso_totale)
+                else:
+                    # Popolarità uguale: doppio arco!
+                    self.grafo.add_edge(id1, id2, weight=peso_totale)
+                    self.grafo.add_edge(id2, id1, weight=peso_totale)
+
+
+
+
+
+
+
+⏱️ CHEAT SHEET: I metodi datetime
+La libreria MySQL-Connector è tua amica: quando fai una SELECT su una colonna Date o DateTime, Python te la trasforma già in un oggetto datetime. Non devi convertirla da stringa!
+
+Python
+import datetime
+
+# 1. Estrarre i pezzi della data
+anno = mia_data.year
+mese = mia_data.month
+giorno = mia_data.day
+
+# 2. Confrontare le date (funziona con i normali operatori!)
+if data_acquisto.year >= 2010 and data_acquisto.year <= 2015:
+    print("È nel range!")
+
+# 3. Creare una data fissa a mano (se ti serve per un controllo)
+data_limite = datetime.date(2010, 1, 1) # Anno, Mese, Giorno
+
+# 4. Ottenere la data di oggi (raro all'esame, ma utile)
+oggi = datetime.datetime.now()
+
+
+
+
+
+
+
+🕸️ CHEAT SHEET: I metodi NetworkX (nx)
+Questa è la Bibbia per il Punto 1 e il Punto 2. Non ti serve altro.
+
+1. Creazione e Gestione Base
+Python
+import networkx as nx
+
+self.grafo = nx.Graph()                              # NON orientato (senza frecce)
+self.grafo = nx.DiGraph()                            # Orientato (con frecce, usato per "chi influenza chi")
+
+self.grafo.clear()                                   # SVUOTA IL GRAFO (usalo sempre all'inizio del metodo!)
+
+self.grafo.add_node(nodo)                            #aggiungi nodo
+self.grafo.add_edge(nodo1, nodo2, weight=peso)       #aggiungi arco
+
+2. Lettura e Statistiche (Punto 1)
+Python
+# Quanti sono?
+num_nodi = len(self.grafo.nodes())                   #numero di nodi
+num_archi = len(self.grafo.edges())                  #numero di archi
+
+# Estrarre gli archi con i loro pesi
+# data=True è FONDAMENTALE, altrimenti ti dà solo la coppia di nodi senza il peso!
+tutti_gli_archi = self.grafo.edges(data=True)
+
+
+
+# Componenti Connesse (SOLO PER nx.Graph() NON orientati!)
+componenti = list(nx.connected_components(self.grafo))
+num_comp = len(componenti)
+comp_maggiore = max(componenti, key=len) # Restituisce il SET di nodi più grande
+
+
+3. Analisi dei Pesi e Gradi (Le domande "subdole")
+Se il prof ti chiede "chi è l'artista più influente" o "calcola la differenza dei pesi", usa questi:
+
+Python
+
+# Grado semplice (quanti vicini ha un nodo)
+vicini = self.grafo.degree(nodo)
+#se chiede i top vicini:
+def getTopCinqueVicini(self):
+        # 1. self.grafo.degree() restituisce una lista di tuple: (Oggetto_Nodo, numero_di_vicini)
+        tutti_i_gradi = list(self.grafo.degree())
+
+        # 2. Ordiniamo la lista.
+        # x[0] è il nodo, x[1] è il numero di vicini. Quindi usiamo x[1] come chiave.
+        # reverse=True mette il più grande in cima.
+        gradi_ordinati = sorted(tutti_i_gradi, key=lambda x: x[1], reverse=True)
+
+        # 3. Restituiamo i primi 5
+        return gradi_ordinati[:5]
+
+Come stamparli nel Controller
+Siccome la funzione ti restituisce una lista di tuple fatte così: (nodo, grado), nel Controller puoi estrarli in modo elegantissimo e stamparli nella View:
+# Richiami la funzione
+        top_nodi = self._model.getTopCinqueVicini()
+
+        self._view.txt_result.controls.append(ft.Text("I 5 nodi con più vicini sono:"))
+
+        # Unpacking della tupla direttamente nel for
+        for nodo, numero_vicini in top_nodi:
+            # Essendo 'nodo' il tuo oggetto, puoi chiamare i suoi metodi o attributi
+            nome_cliente = nodo.getNameCostumer()
+            cognome_cliente = nodo.getSurnameCostumer()
+
+            self._view.txt_result.controls.append(ft.Text(f"- {nome_cliente} {cognome_cliente} (Vicini: {numero_vicini})"))
+
+
+Se l'esame ti chiede i vicini in un grafo NON orientato (nx.Graph()), usi self.grafo.degree().
+
+Ma se l'esame fosse sul grafo Orientato (nx.DiGraph()), la parola "vicini" diventa ambigua. Il professore preciserà se vuole:
+
+I nodi verso cui "punta" (archi uscenti) -> Usi list(self.grafo.out_degree())
+
+I nodi da cui "è puntato" (archi entranti) -> Usi list(self.grafo.in_degree())
+
+Il resto del codice (il sorted e il lambda) rimane identico!
+
+
+
+
+# GRAFI ORIENTATI (DiGraph): Pesi in entrata e in uscita
+peso_entrante = self.grafo.in_degree(nodo, weight='weight')
+peso_uscente = self.grafo.out_degree(nodo, weight='weight')
+influenza = peso_uscente - peso_entrante
+
+# Trovare i vicini di un nodo specifico (Usatissimo nel Punto 2 per la Ricorsione!)
+lista_vicini = list(self.grafo.neighbors(nodo_partenza))
+
+4. Ordinamento Rapido (Il trucco della lambda)
+Questa riga di codice compare nel 99% degli esami per stampare "i 5 archi col peso maggiore". Ricopiala a memoria:
+Python
+archi_ordinati = sorted(self.grafo.edges(data=True), key=lambda x: x[2]['weight'], reverse=True)
+top_5 = archi_ordinati[:5]
+(Spiegazione rapida: x[0] è nodo1, x[1] è nodo2, x[2] è il dizionario degli attributi, quindi x[2]['weight'] pesca il peso).
+
+
+1. Il mistero di sorted e lambda: Tuple o Dizionari?
+La risposta è: entrambi contemporaneamente.
+
+Quando tu chiami self.grafo.edges(data=True), NetworkX ti restituisce una Lista di Tuple. Ma l'ultimo elemento di questa tupla è un Dizionario.
+
+Immagina che NetworkX ti restituisca questa lista:
+
+Python
+[
+  (Nodo_A, Nodo_B, {"weight": 10, "color": "red"}),
+  (Nodo_C, Nodo_D, {"weight": 25, "color": "blue"})
+]
+Quando scrivi key=lambda x: x[2]['weight'], Python prende ogni singola tupla (che chiama x) e fa questo ragionamento:
+
+x[0] è il primo nodo.
+
+x[1] è il secondo nodo.
+
+x[2] è il dizionario degli attributi (terza posizione).
+
+x[2]['weight'] entra nel dizionario e pesca il valore associato alla chiave "weight".
