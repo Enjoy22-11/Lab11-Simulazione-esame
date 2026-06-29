@@ -18,6 +18,71 @@ raise_on_warnings=True
 
 
 
+1. Ordinare in Ordine Alfabetico (Nomi, Email, Nazioni)
+Questo è il caso più semplice in assoluto. In Python, se applichi sorted() a delle stringhe, il linguaggio le ordina automaticamente in ordine alfabetico (lessicografico) dalla A alla Z.
+
+Se hai la tua solita lista di oggetti Customer (o una lista di tuple), usi sempre la fidata lambda:
+
+Python
+# Mettiamo che tu voglia ordinare i clienti per Email (dalla A alla Z)
+clienti_ordinati = sorted(lista_clienti, key=lambda x: x.email)
+
+# Se vuoi l'ordine inverso (dalla Z alla A), aggiungi reverse=True
+clienti_inversi = sorted(lista_clienti, key=lambda x: x.email, reverse=True)
+
+
+
+
+
+
+
+
+
+
+Caso A: "Ordina per numero di telefono" (Semplice)
+Se il professore non specifica nulla di strano, si aspetta semplicemente che tu li ordini così come sono, ovvero come stringhe. Questo raggrupperà naturalmente i numeri con lo stesso prefisso internazionale (es. tutti i +1 vicini, tutti i +55 vicini).
+
+Python
+# Si ordinano esattamente come le email, come normali stringhe
+clienti_per_telefono = sorted(lista_clienti, key=lambda x: x.phone)
+Caso B: La richiesta cattiva ("Ignorando i simboli" o "Come valore numerico")
+Se il testo dicesse esplicitamente di ordinare i telefoni considerando solo le cifre numeriche, devi "ripulire" la stringa prima di farla valutare alla lambda. Puoi farlo eliminando i caratteri che disturbano.
+
+Python
+def pulisci_telefono(cliente):
+    # Prendo il telefono (es. "+55 (12) 3923-5555")
+    tel = cliente.phone
+    
+    # Se per caso il cliente non ha il telefono (è None), restituisco uno 0 per non far crashare il programma
+    if tel is None:
+        return 0
+        
+    # Sostituisco i simboli strani con niente ("")
+    tel_pulito = tel.replace("+", "").replace(" ", "").replace("(", "").replace(")", "").replace("-", "")
+    
+    # Ora che ho "551239235555", posso convertirlo in numero!
+    return int(tel_pulito)
+
+# Nel sorted, invece di usare lambda, chiamo la mia funzione "spazzino"
+clienti_ordinati = sorted(lista_clienti, key=pulisci_telefono)
+⚠️ Attenzione al Nemico Invisibile: i NULL (None)
+Guardando il tuo screenshot, vedi la colonna Fax? È piena di [NULL].
+Se il professore ti chiede di ordinare una lista di clienti in base al Fax, e tu fai sorted(lista_clienti, key=lambda x: x.fax), Python andrò in crash appena troverà un cliente senza Fax. Il computer non sa se mettere il "Niente" prima della "A" o dopo la "Z".
+
+Il trucco per salvarsi? Dire a Python cosa fare quando trova un None usando un piccolo if dentro la lambda (o in una funzione a parte come ho fatto sopra):
+
+Python
+# Se il fax è None, fai finta che sia la stringa vuota "", che finirà in cima alla lista. 
+# Altrimenti usa il fax vero.
+clienti_ordinati = sorted(lista_clienti, key=lambda x: x.fax if x.fax is not None else "")
+
+
+
+
+
+
+
+
 
 
 
